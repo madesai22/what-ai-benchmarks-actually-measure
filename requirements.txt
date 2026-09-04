@@ -1,0 +1,13 @@
+datasets
+pandas
+numpy
+requests
+pyyaml
+scikit-learn
+scipy
+nltk
+rouge-score
+fairlearn
+unidecode
+google-api-python-client
+tqdm
