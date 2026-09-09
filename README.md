@@ -13,14 +13,12 @@ on the Hugging Face Hub:
 
 | Path | What it does |
 |---|---|
-| `data_acquisition/get_data.py` | Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
+| `get_data.py` | Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
 | `score.py` | Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
 
 ## Building datasets
 
 ```bash
-cd data_acquisition
-
 # list the available benchmark builders
 python get_data.py --list
 
@@ -64,9 +62,9 @@ benchmark's `*_config.json` written by `get_data.py`. Toxicity scoring
 
 Two scoring functions read a benchmark's built dataset directly rather than
 just the log being scored, so `get_data.py` must have been run first:
-`decodingtrust_fair` reads `data_acquisition/data/decoding_trust/dt_fair.jsonl`
-and `dyck` reads `data_acquisition/data/dyck/dyck.jsonl`. `world_values`
-additionally needs `question_metadata.json` from a
+`decodingtrust_fair` reads `data/decoding_trust/dt_fair.jsonl` and `dyck`
+reads `data/dyck/dyck.jsonl`. `world_values` additionally needs
+`question_metadata.json` from a
 [WorldValuesBench](https://github.com/Demon702/WorldValuesBench) checkout,
 copied to `world_values_metadata.json` at the repo root.
 

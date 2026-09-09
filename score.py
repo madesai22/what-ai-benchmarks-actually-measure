@@ -28,7 +28,7 @@ from pathlib import Path
 # Resolved from the script's own location so scoring works regardless of the
 # working directory it's invoked from.
 REPO_ROOT = Path(__file__).resolve().parent
-DATA_DIR = REPO_ROOT / "data_acquisition" / "data"
+DATA_DIR = REPO_ROOT / "data"
 
 
 
