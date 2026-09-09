@@ -4,8 +4,12 @@ Code for building the benchmark datasets and scoring the model outputs analyzed 
 *What AI Benchmarks Actually Measure: Adapting Convergent and Discriminant Validity
 to Interrogate Fifty-Six AI Benchmarks*.
 
-**Paper**: [arxiv.org/pdf/2609.08812](https://arxiv.org/pdf/2609.08812)
-(arXiv:2609.08812, published at COLM)
+> Meera Desai, Sang T. Truong, Hanna Wallach, Alex Chouldechova, A. Feder Cooper,
+> Jean Garcia-Gathright, Daniel E. Ho, Abigail Z. Jacobs, Sanmi Koyejo,
+> Nicholas Pangakis, and Angelina Wang. 2026. *What AI Benchmarks Actually
+> Measure: Adapting Convergent and Discriminant Validity to Interrogate
+> Fifty-Six AI Benchmarks.* In Conference on Language Modeling (COLM).
+> [arxiv.org/abs/2609.08812](https://arxiv.org/abs/2609.08812)
 
 🤗 The item-level model outputs and scores produced with this code are published
 on the Hugging Face Hub:
