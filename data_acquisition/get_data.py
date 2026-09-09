@@ -355,7 +355,7 @@ def make_calm():
             dataset_source = row['source_dataset']
             sample_info = answers.iloc[d]['sample_info']
             github_idx = answers.iloc[d]['idx']
-            out_data.append({ 'id': github_idx, 'prompt': prompt, 'label': label, 'demographic':demo, 'category': dataset_source, 'sample_info': sample_info, 'template_idx':template_idx})
+            out_data.append({ 'id': github_idx, 'prompt': prompt, 'label': label, 'demographic':demo, 'category': dataset_source, 'sample_info': sample_info, 'template_id':template_idx})
         df = pd.DataFrame(out_data)
 
         out_random = random_stratified_sample(df, category_key='sample_info', total_sample_size=1000)
@@ -810,7 +810,7 @@ def make_civics():
         out_data.append({'id':id, 'prompt':prompt, 'label':label, 'category':topic, 'language':language})
     out_random = random_stratified_sample(pd.DataFrame(out_data), category_key='category', total_sample_size=333)
     # for each row, add a row with prompt "Passage: {prompt}"
-    out_random_templated = pd.DataFrame(columns=out_random.columns.tolist()+['prompt_id'])
+    out_random_templated = pd.DataFrame(columns=out_random.columns.tolist()+['question_id'])
     i = 0
     for index, row in out_random.iterrows():
         language = row['language'].split()[0]
@@ -818,15 +818,15 @@ def make_civics():
         for template in templates:
             new_row = row.copy()
             #print(new_row)
-            new_row['prompt_id'] = new_row['id']
+            new_row['question_id'] = new_row['id']
             new_row['id'] = i
             new_row['prompt'] = template.format(STATEMENT=row['prompt'])
             out_random_templated.loc[(i)]=new_row
             i += 1
    # CIVICS_PROMPTS
 
-    col_to_move = out_random_templated.pop('prompt_id')
-    out_random_templated.insert(0, 'prompt_id', col_to_move)
+    col_to_move = out_random_templated.pop('question_id')
+    out_random_templated.insert(0, 'question_id', col_to_move)
     path = "./data/civics/"
     os.makedirs(path, exist_ok=True)
     fname = "civics_random.jsonl"
@@ -1591,7 +1591,7 @@ def make_xsafety():
             data = pd.read_csv(url_dict[url],header=None)
             # name single column 'prompt'
             data['prompt'] = data[0]
-            data['lang'] = lang
+            data['language'] = lang
             data['category'] = url
             data['id'] = ["{}-{}".format(i, j) for j in range(len(data))]
             #data['id'] = i
@@ -2109,12 +2109,12 @@ def make_dt_stereo():
             topic = item['prompt']['stereotype_topic_tag']
             if demographic in ['White people', 'Black people']:
                 for i in range(10):
-                    race_data.append({'id':"dt_stereo-{}".format(item_id),'question_id':"id-{}".format(id), 'prompt':prompt, 'demographic':demographic,'topic':topic})
+                    race_data.append({'id':"dt_stereo-{}".format(item_id),'question_id':"id-{}".format(id), 'prompt':prompt, 'demographic':demographic,'category':topic})
                     item_id += 1
                 id +=1
             elif demographic in ['Men', 'Women']:
                 for i in range(10):
-                    gender_data.append({'id':"dt_stereo-{}".format(item_id),'question_id':"id-{}".format(id), 'prompt':prompt, 'demographic':demographic,'topic':topic})
+                    gender_data.append({'id':"dt_stereo-{}".format(item_id),'question_id':"id-{}".format(id), 'prompt':prompt, 'demographic':demographic,'category':topic})
                     item_id += 1
                 id +=1
     jsonl_filename_r = path+'dt_stereo_race.jsonl'
