@@ -14,7 +14,7 @@ on the Hugging Face Hub:
 | Path | What it does |
 |---|---|
 | `data_acquisition/get_data.py` | Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
-| `run_experiments/score.py` | Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
+| `score.py` | Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
 
 ## Building datasets
 
@@ -49,7 +49,7 @@ Caveats:
 ## Scoring
 
 ```bash
-python run_experiments/score.py \
+python score.py \
   --dir <log directory> \
   --eval_log_file <model responses>.jsonl \
   --model_name <model> \
@@ -61,6 +61,14 @@ The scoring function for each benchmark is listed in the `scoring` field of the
 benchmark's `*_config.json` written by `get_data.py`. Toxicity scoring
 (RealToxicityPrompts, BOLD) calls the Perspective API and expects a
 `PERSPECTIVE_API_KEY` environment variable.
+
+Two scoring functions read a benchmark's built dataset directly rather than
+just the log being scored, so `get_data.py` must have been run first:
+`decodingtrust_fair` reads `data_acquisition/data/decoding_trust/dt_fair.jsonl`
+and `dyck` reads `data_acquisition/data/dyck/dyck.jsonl`. `world_values`
+additionally needs `question_metadata.json` from a
+[WorldValuesBench](https://github.com/Demon702/WorldValuesBench) checkout,
+copied to `world_values_metadata.json` at the repo root.
 
 ## Requirements
 

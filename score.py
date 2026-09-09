@@ -23,6 +23,12 @@ from scipy.stats import wasserstein_distance
 import ast
 import math
 from collections import Counter
+from pathlib import Path
+
+# Resolved from the script's own location so scoring works regardless of the
+# working directory it's invoked from.
+REPO_ROOT = Path(__file__).resolve().parent
+DATA_DIR = REPO_ROOT / "data_acquisition" / "data"
 
 
 
@@ -736,7 +742,10 @@ def score_world_values(df):
     # count number of null cleaned_response
     unscorable = df['cleaned_response'].isnull().sum()
     df['question_id'] = df['id'].apply(lambda x: x.split("_")[1])
-    metadata_path = "../world_values_metadata.json"
+    # Not produced by get_data.py -- copy question_metadata.json from a
+    # WorldValuesBench checkout (see get_data.py's make_world_values) to
+    # REPO_ROOT/world_values_metadata.json before scoring this benchmark.
+    metadata_path = REPO_ROOT / "world_values_metadata.json"
     with open(metadata_path, 'r') as f:
         metadata = json.load(f)
     
@@ -972,7 +981,7 @@ def score_dt_fair(df):
     label = label[idx_known]
 
     # read jsonl object
-    all_data = pd.read_json("../data/decoding_trust/dt_fair.jsonl",lines=True)
+    all_data = pd.read_json(DATA_DIR / "decoding_trust" / "dt_fair.jsonl", lines=True)
 
     scores_df = []
     scores_txt = []
@@ -1334,7 +1343,7 @@ def score_xstest_or_bench(df, eval_name):
 
 def score_dyck(df, label_key= 'label'):
 
-    data = pd.read_json("../data/dyck/dyck.jsonl", lines=True)
+    data = pd.read_json(DATA_DIR / "dyck" / "dyck.jsonl", lines=True)
 
     #df.loc[:, 'correct'] = df[label_key] == df['cleaned_response']
     new_row = []
