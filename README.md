@@ -7,8 +7,8 @@ to Interrogate Fifty-Six AI Benchmarks*.
 **Paper**: [arxiv.org/pdf/2609.08812](https://arxiv.org/pdf/2609.08812)
 (arXiv:2609.08812, published at COLM)
 
-The item-level model outputs and scores produced with this code are published on
-the Hugging Face Hub:
+🤗 The item-level model outputs and scores produced with this code are published
+on the Hugging Face Hub:
 [madesai/what-ai-benchmarks-actually-measure](https://huggingface.co/datasets/madesai/what-ai-benchmarks-actually-measure).
 
 ## Layout
@@ -16,8 +16,6 @@ the Hugging Face Hub:
 | Path | What it does |
 |---|---|
 | `data_acquisition/get_data.py` | Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
-| `data_acquisition/get_data_utils.py` | Shared helpers: sampling (simple, stratified, set-preserving), HELM download, config templates, judge prompt templates. |
-| `data_acquisition/raft_prompts.py`, `sg_test_prompts.py` | Prompt templates for RAFT and SG-Bench. |
 | `run_experiments/score.py` | Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
 
 ## Building datasets
