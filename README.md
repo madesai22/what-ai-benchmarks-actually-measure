@@ -4,6 +4,9 @@ Code for building the benchmark datasets and scoring the model outputs analyzed 
 *What AI Benchmarks Actually Measure: Adapting Convergent and Discriminant Validity
 to Interrogate Fifty-Six AI Benchmarks*.
 
+**Paper**: [arxiv.org/pdf/2609.08812](https://arxiv.org/pdf/2609.08812)
+(arXiv:2609.08812, published at COLM)
+
 The item-level model outputs and scores produced with this code are published on
 the Hugging Face Hub:
 [madesai/what-ai-benchmarks-actually-measure](https://huggingface.co/datasets/madesai/what-ai-benchmarks-actually-measure).
@@ -71,5 +74,19 @@ pip install -r requirements.txt
 
 ## Citation
 
-See the [Hugging Face dataset card](https://huggingface.co/datasets/madesai/what-ai-benchmarks-actually-measure)
-for the citation.
+If you use this code or the accompanying dataset, please cite our paper:
+
+```bibtex
+@inproceedings{desai2026benchmarks,
+  title     = {What {AI} Benchmarks Actually Measure: Adapting Convergent and
+               Discriminant Validity to Interrogate Fifty-Six {AI} Benchmarks},
+  author    = {Desai, Meera and Truong, Sang T. and Wallach, Hanna and
+               Chouldechova, Alex and Cooper, A. Feder and
+               Garcia-Gathright, Jean and Ho, Daniel E. and
+               Jacobs, Abigail Z. and Koyejo, Sanmi and
+               Pangakis, Nicholas and Wang, Angelina},
+  booktitle = {Conference on Language Modeling (COLM)},
+  year      = {2026},
+  url       = {https://arxiv.org/abs/2609.08812}
+}
+```
