@@ -9,7 +9,7 @@ to Interrogate Fifty-Six AI Benchmarks* (Desai et al., 2026,
 on the Hugging Face Hub:
 [madesai/what-ai-benchmarks-actually-measure](https://huggingface.co/datasets/madesai/what-ai-benchmarks-actually-measure).
 
-## Layout
+## Contents
 
 | Path | What it does |
 |---|---|
