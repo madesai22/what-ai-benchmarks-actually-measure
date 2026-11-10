@@ -23,8 +23,10 @@ mkdir -p logs
 SERVER_LOG=logs/vllm_${MODEL_NAME}.log
 
 # --- start the server, and stop it however this script exits ---------------
+# --max-logprobs 150: DiscrimEval asks for the top 150 first-token candidates
 vllm serve "$MODEL" --port "$PORT" --tensor-parallel-size "$TP" --dtype auto \
-    --gpu-memory-utilization 0.85 --disable-log-stats ${VLLM_ARGS:-} > "$SERVER_LOG" 2>&1 &
+    --gpu-memory-utilization 0.85 --disable-log-stats \
+    --max-logprobs 150 ${VLLM_ARGS:-} > "$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
 trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
 

@@ -66,11 +66,6 @@ def commands_for(bench_dir, model, scoring, port, max_concurrent, log_dir):
                              f"--model_name {model_dir} --scoring_fn {fn} --config_fpath {rel_cfg}")
             continue
 
-        if "log_probs" in cfg:
-            lines.append(f"# {eval_name}/{eval_file}: scored from answer-option log-probabilities, "
-                         f"which run_experiments_vllm.py does not collect")
-            continue
-
         max_tokens = LONG_ANSWER_EVALS.get(eval_name, MAX_TOKENS[cfg["eval_type"]])
         cmd = (f"python run_experiments/run_experiments_vllm.py --eval_name {eval_name} --eval_file {eval_file} "
                f"--model {model} --temperature 1 --max_tokens {max_tokens} --log_dir {log_dir} "
@@ -80,6 +75,8 @@ def commands_for(bench_dir, model, scoring, port, max_concurrent, log_dir):
             cmd += f' --system_prompt_json {base}_system_prompt.json --system_prompt "see dict"'
         elif sp:
             cmd += " --system_prompt " + shlex.quote(sp)
+        if cfg.get("log_probs"):  # scored from the answer options' log-probabilities (e.g. DiscrimEval)
+            cmd += f" --log_probs {cfg['log_probs']}"
         # --incomplete makes reruns resume instead of starting over
         lines.append(cmd + " --incomplete")
     return lines

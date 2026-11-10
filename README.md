@@ -76,10 +76,12 @@ python run_experiments/make_run_script.py --model google/gemma-2-9b-it --evals x
 bash run_google_gemma-2-9b-it.sh
 ```
 
-Not covered here: DiscrimEval and GlobalOpinionQA are scored from the
-log-probabilities of each answer option, which `run_experiments_vllm.py` does
-not collect, and API models (OpenAI, Anthropic, …) were queried with separate
-clients.
+Each response is stored with its token log-probabilities. Benchmarks scored from
+answer-option probabilities (DiscrimEval) get `--log_probs 150` from their
+config, which records each option's log-probability as the first generated
+token; the server must allow it (`vllm serve ... --max-logprobs 150`, which
+`run_vllm_example.sh` sets). API models (OpenAI, Anthropic, …) were queried with
+separate clients that are not included here.
 
 ## LLM judges
 
@@ -123,6 +125,10 @@ The scoring function for each benchmark is listed in the `scoring` field of the
 benchmark's `*_config.json` written by `get_data.py`. Toxicity scoring
 (RealToxicityPrompts, BOLD) calls the Perspective API and expects a
 `PERSPECTIVE_API_KEY` environment variable.
+
+Some scoring functions write per-item results back into the log (DiscrimEval
+adds `yes`, `no`, and `item_score`) and reuse them on later runs, so score a log
+only once it is complete, or delete those fields before rescoring.
 
 Two scoring functions read a benchmark's built dataset directly rather than
 just the log being scored, so `get_data.py` must have been run first:
