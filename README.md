@@ -97,7 +97,7 @@ stops the server:
 
 ```bash
 cd judge
-./score_judge.sh <judge> <scored_model|all> <eval> [eval ...] [--override_results]
+./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--override_results]
 
 ./score_judge.sh qwen google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
 TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
