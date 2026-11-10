@@ -1,16 +1,24 @@
 #!/bin/bash
-# Usage: ./run_model.sh <model> <eval> [eval ...]     or     ./run_model.sh <model> all
+# Usage: ./run_model.sh <model> <eval> [eval ...] [--tp=N]     or     ./run_model.sh <model> all [--tp=N]
+#   --tp=N: number of GPUs to run the model on (default 1)
 # Examples:
 #   ./run_model.sh google/gemma-2-9b-it xstest mmlu gsm8k
-#   TP=4 ./run_model.sh meta-llama/Llama-3.3-70B-Instruct all
+#   ./run_model.sh meta-llama/Llama-3.3-70B-Instruct all --tp=4
 
 # source ~/miniconda3/etc/profile.d/conda.sh
 # conda activate <your-env>
 
 MODEL=$1
 shift
-EVALS="$@"
-TP=${TP:-1}   # number of GPUs
+TP=1
+EVALS=""
+for arg in "$@"; do
+    case "$arg" in
+        --tp=*) TP=${arg#--tp=} ;;
+        *)      EVALS="$EVALS $arg" ;;
+    esac
+done
+EVALS=$(echo $EVALS)   # trim the leading space
 MODEL_NAME=$(echo $MODEL | tr '/' '_')
 
 cd "$(dirname "$0")"

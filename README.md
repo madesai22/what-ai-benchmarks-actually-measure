@@ -58,10 +58,10 @@ first, then, on a GPU machine:
 
 ```bash
 cd run_experiments
-./run_model.sh <model> <eval> [eval ...]     # or: ./run_model.sh <model> all
+./run_model.sh <model> <eval> [eval ...] [--tp=N]     # or: ./run_model.sh <model> all
 
 ./run_model.sh google/gemma-2-9b-it xstest mmlu gsm8k
-TP=4 ./run_model.sh meta-llama/Llama-3.3-70B-Instruct all   # TP = number of GPUs
+./run_model.sh meta-llama/Llama-3.3-70B-Instruct all --tp=4   # --tp = number of GPUs
 ```
 
 `run_model.sh` writes the collection commands to `run_<model>.sh` (with
@@ -114,19 +114,18 @@ Use this `judge_model` for each benchmark:
 To score responses from gemma-2-9b-it on xstest, sgxstest, or-bench, xsafety, and civics using Qwen/Qwen3-30B-A3B-Instruct-2507, use:
 ```
 ./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
-TP=4 
 ```
 
 To score responses from all models on harm_bench using cais/HarmBench-Llama-2-13b-cls,  use:
 ```
-./score_judge.sh meta-llama/Llama-3.3-70B-Instruct all harm_bench
+./score_judge.sh cais/HarmBench-Llama-2-13b-cls all harm_bench
 ```
 
 Benchmarks can share one `score_judge.sh` call only if they use the same
 `judge_model`.
 
-Set `TP` to the number of GPUs to shard the judge over (Llama-3.3-70B needs
-about 4×80GB). Verdicts are written into the log files in place (columns
+Add `--tp=N` to run the judge on N GPUs (Llama-3.3-70B needs about 4×80GB,
+so `--tp=4`). Verdicts are written into the log files in place (columns
 `QWEN`, `LLAMA`, `LLAMA2_CLS`, …). Already-judged items are skipped, so reruns
 only fill gaps; `--override_results` re-judges everything.
 

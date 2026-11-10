@@ -1,9 +1,10 @@
 #!/bin/bash
-# Usage: ./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--override_results] [--lang=fr]
+# Usage: ./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--tp=N] [--override_results] [--lang=fr]
 #   judge_model: the Hugging Face name of the judge (see the table in the README)
+#   --tp=N: number of GPUs to run the judge on (default 1; Llama-3.3-70B needs --tp=4)
 # Examples:
 #   ./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest or-bench xsafety
-#   TP=4 ./score_judge.sh meta-llama/Llama-3.3-70B-Instruct all xstest sgxstest or-bench xsafety civics
+#   ./score_judge.sh meta-llama/Llama-3.3-70B-Instruct all xstest sgxstest or-bench xsafety civics --tp=4
 #   ./score_judge.sh cais/HarmBench-Llama-2-13b-cls all harm_bench
 
 # source ~/miniconda3/etc/profile.d/conda.sh
@@ -12,15 +13,16 @@
 MODEL=$1
 SCORED_MODEL=$2
 shift 2
+TP=1
 EVALS=()
 EXTRA_ARGS=()
 for arg in "$@"; do
     case "$arg" in
-        --*) EXTRA_ARGS+=("$arg") ;;
-        *)   EVALS+=("$arg") ;;
+        --tp=*) TP=${arg#--tp=} ;;
+        --*)    EXTRA_ARGS+=("$arg") ;;
+        *)      EVALS+=("$arg") ;;
     esac
 done
-TP=${TP:-1}   # number of GPUs; Llama-3.3-70B needs TP=4
 
 cd "$(dirname "$0")"
 
