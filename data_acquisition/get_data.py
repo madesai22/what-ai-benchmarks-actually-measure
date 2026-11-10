@@ -57,12 +57,11 @@ def make_global_opinion_qa():
 
 
 def make_world_values():
-    message = "Please download and process data at https://github.com/Demon702/WorldValuesBench."
+    message = ("Please download and process data at https://github.com/Demon702/WorldValuesBench, "
+               "cloned into the repo root (so that WorldValuesBench/WorldValuesBench/test/ exists).")
     path_to_wv = "../WorldValuesBench/WorldValuesBench/"
     if not os.path.exists(path_to_wv):
-        print("File not found.")
-        print(message)
-        return
+        raise FileNotFoundError(message)
     questions_data = pd.read_csv(os.path.join(path_to_wv, "test","test_value_qa.tsv"), sep="\t")
     demo = pd.read_csv(os.path.join(path_to_wv, "test","test_demographic_qa.tsv"), sep="\t")
     with open(os.path.join(path_to_wv, "question_metadata.json")) as f:
@@ -2358,7 +2357,7 @@ def main():
 
     registry = dataset_registry()
     parser = argparse.ArgumentParser(
-        description="Download and build benchmark datasets into ./data/.",
+        description="Download and build benchmark datasets into data_acquisition/data/.",
         epilog="Examples:\n"
                "  python get_data.py --list\n"
                "  python get_data.py gsm8k xstest\n"
@@ -2372,6 +2371,10 @@ def main():
     parser.add_argument("--list", action="store_true",
                         help="list available dataset names and exit")
     args = parser.parse_args()
+
+    # all paths in this file are relative to data_acquisition/, so data always lands in
+    # data_acquisition/data/ (where the rest of the pipeline looks) wherever this is run from
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     if args.list:
         for name in registry:
@@ -2401,7 +2404,7 @@ def main():
     if failed:
         print(f"\n{len(failed)}/{len(names)} failed: {', '.join(failed)}")
     else:
-        print(f"\nbuilt {len(names)} dataset(s) in {PATH}")
+        print(f"\nbuilt {len(names)} dataset(s) in {os.path.abspath(PATH)}")
 
 
 if __name__ == "__main__":

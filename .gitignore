@@ -8,3 +8,4 @@ run_experiments/run_*.sh
 !run_experiments/run_model.sh
 *.pid
 nohup.out
+WorldValuesBench/

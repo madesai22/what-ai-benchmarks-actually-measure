@@ -1,4 +1,4 @@
-# What AI Benchmarks Actually Measure — data acquisition & scoring code
+# What AI Benchmarks Actually Measure — benchmark data, model responses, judging & scoring code
 
 Code for building the benchmark datasets, collecting and judging model responses, and scoring the model outputs analyzed in
 *What AI Benchmarks Actually Measure: Adapting Convergent and Discriminant Validity
@@ -9,34 +9,62 @@ to Interrogate Fifty-Six AI Benchmarks* (Desai et al., 2026,
 on the Hugging Face Hub:
 [madesai/what-ai-benchmarks-actually-measure](https://huggingface.co/datasets/madesai/what-ai-benchmarks-actually-measure).
 
+## Pipeline
+
+All commands below are run from the top of the repo. The steps, in order:
+
+1. **Build datasets** — `data_acquisition/get_data.py` downloads and samples each
+   benchmark into `data_acquisition/data/`.
+2. **Collect responses** — `run_experiments/run_model.sh` serves a model with
+   vLLM and writes its responses to `logs/<model>/`.
+3. **Translate** (non-English XSafety only) — `judge/translate_gemma.py`.
+4. **Judge** (safety and refusal benchmarks) — `judge/score_judge.sh` adds a
+   judge model's verdict to each response.
+5. **Score** — `score.py` turns the logs into benchmark scores in
+   `logs/<model>/scores/<model>-scores.csv`.
+
+### Quick start
+
+Try one small model on one benchmark first. This needs vLLM and a GPU; the
+Qwen3-30B judge needs about 80GB of GPU memory (use `--tp=2` on smaller GPUs).
+
+```bash
+pip install -r requirements.txt vllm
+python data_acquisition/get_data.py xstest
+./run_experiments/run_model.sh google/gemma-2-2b-it xstest
+./judge/score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-2b-it xstest
+python run_experiments/make_run_script.py --model google/gemma-2-2b-it --evals xstest --scoring
+bash run_google_gemma-2-2b-it_scoring.sh
+cat logs/google_gemma-2-2b-it/scores/google_gemma-2-2b-it-scores.csv
+```
+
 ## Contents
 
 | Path | What it does |
 |---|---|
-| `data_acquisition/get_data.py` | **Building datasets** Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
-| `run_experiments/make_run_script.py` | **Collecting model responses** Writes the collection (or scoring) commands for every benchmark for one model, with the paper's per-benchmark settings. |
-| `run_experiments/run_model.sh` | Starts a vLLM server for a model, collects its responses, and stops the server. |
-| `judge/` | **Judging safety and refusal benchmarks** Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `score_judge.sh`, `translate_gemma.py` for non-English XSafety). |
-| `score.py` | **Scoring** Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
-
+| `data_acquisition/get_data.py` | **Building datasets.** Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data_acquisition/data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
+| `run_experiments/run_model.sh` | **Collecting model responses.** Starts a vLLM server for a model, collects its responses, and stops the server. |
+| `run_experiments/make_run_script.py` | Writes the collection (or scoring) commands for every benchmark for one model, with the paper's per-benchmark settings. Used by `run_model.sh`. |
+| `run_experiments/run_experiments_vllm.py` | Sends one benchmark file to a running vLLM server and saves the responses. Called by the commands `make_run_script.py` writes. |
+| `judge/score_judge.sh` | **Judging safety and refusal benchmarks.** Starts a judge model with vLLM and runs `judge/score_judge.py`, which adds its verdict to each response. Judge prompts are in `judge/config.py`. |
+| `judge/translate_gemma.py` | Translates the French, German, and Spanish XSafety prompts and responses to English before judging. |
+| `score.py` | **Scoring.** Turns response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
 
 ## Building datasets
 
 ```bash
-cd data_acquisition
-
 # list the available benchmark builders
-python get_data.py --list
+python data_acquisition/get_data.py --list
 
 # build one or several
-python get_data.py gsm8k xstest
+python data_acquisition/get_data.py gsm8k xstest
 
 # build everything
-python get_data.py --all
+python data_acquisition/get_data.py --all
 ```
 
-Outputs land in `./data/` relative to the working directory. Failures are
-reported per dataset and don't stop the run.
+Outputs land in `data_acquisition/data/`, wherever you run the script from.
+Failures are reported per dataset and don't stop the run.
 
 Caveats:
 
@@ -45,8 +73,8 @@ Caveats:
   since collection, so those builders may 404 until pointed at the current
   HELM release.
 - `world_values` requires a manual download of
-  [WorldValuesBench](https://github.com/Demon702/WorldValuesBench) (the builder
-  prints instructions).
+  [WorldValuesBench](https://github.com/Demon702/WorldValuesBench), cloned into
+  the top of this repo (the builder prints instructions if it is missing).
 - Sampling uses fixed random seeds, so rebuilt datasets match the ones used in
   the paper wherever the upstream source is unchanged.
 
@@ -57,14 +85,13 @@ Responses are collected from models served with [vLLM](https://docs.vllm.ai)
 first, then, on a GPU machine:
 
 ```bash
-cd run_experiments
-./run_model.sh <model> <eval> [eval ...] [--tp=N]     # or: ./run_model.sh <model> all
+./run_experiments/run_model.sh <model> <eval> [eval ...] [--tp=N]     # or: ... <model> all
 
-./run_model.sh google/gemma-2-9b-it xstest mmlu gsm8k
-./run_model.sh meta-llama/Llama-3.3-70B-Instruct all --tp=4   # --tp = number of GPUs
+./run_experiments/run_model.sh google/gemma-2-9b-it xstest mmlu gsm8k
+./run_experiments/run_model.sh meta-llama/Llama-3.3-70B-Instruct all --tp=4   # --tp = number of GPUs
 ```
 
-`run_model.sh` writes the collection commands to `run_<model>.sh` (with
+`run_model.sh` writes the collection commands to `run_experiments/run_<model>.sh` (with
 `make_run_script.py`) and runs them, so you can also edit and rerun that file.
 
 Responses land in `logs/<model>/`. Sampling uses temperature 1, and each
@@ -96,8 +123,7 @@ Each benchmark's judge, prompt, and output column are set in `judge/config.py`.
 stops the server:
 
 ```bash
-cd judge
-./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--override_results]
+./judge/score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--tp=N] [--override_results]
 ```
 
 Use this `judge_model` for each benchmark:
@@ -113,12 +139,12 @@ Use this `judge_model` for each benchmark:
 ### Examples of using score_judge.sh: 
 To score responses from gemma-2-9b-it on xstest, sgxstest, or-bench, xsafety, and civics using Qwen/Qwen3-30B-A3B-Instruct-2507, use:
 ```
-./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
+./judge/score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
 ```
 
 To score responses from all models on harm_bench using cais/HarmBench-Llama-2-13b-cls,  use:
 ```
-./score_judge.sh cais/HarmBench-Llama-2-13b-cls all harm_bench
+./judge/score_judge.sh cais/HarmBench-Llama-2-13b-cls all harm_bench
 ```
 
 Benchmarks can share one `score_judge.sh` call only if they use the same
@@ -136,12 +162,11 @@ the prompts and the responses before doing LLM judging with
 then pass `--lang`:
 
 ```bash
-cd judge
-python translate_gemma.py --mode data   # once: translate the prompts
-python translate_gemma.py --mode logs   # translate responses (add --model <model> for one)
-./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=fr
-./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=de
-./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=sp
+python judge/translate_gemma.py --mode data   # once: translate the prompts
+python judge/translate_gemma.py --mode logs   # translate responses (add --model <model> for one)
+./judge/score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=fr
+./judge/score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=de
+./judge/score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=sp
 ```
 
 ## Scoring
@@ -161,6 +186,11 @@ To write every scoring command for a model:
 python run_experiments/make_run_script.py --model google/gemma-2-9b-it --scoring
 bash run_google_gemma-2-9b-it_scoring.sh
 ```
+
+Scores are written to `logs/<model>/scores/<model>-scores.csv`, one row per
+metric (columns `eval_name`, `concept`, `score`, `value`, `eval_type`,
+`system_prompt`). Each run appends its rows, so delete that file before
+rescoring a model from scratch.
 
 The scoring function for each benchmark is listed in the `scoring` field of the
 benchmark's `*_config.json` written by `get_data.py`. Toxicity scoring
