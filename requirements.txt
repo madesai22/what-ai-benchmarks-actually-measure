@@ -11,3 +11,7 @@ fairlearn
 unidecode
 google-api-python-client
 tqdm
+aiohttp
+aiofiles
+transformers
+# vllm is needed on the GPU machine that serves models and judges: pip install vllm
