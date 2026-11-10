@@ -106,7 +106,7 @@ TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
 
 | Benchmarks (`eval`) | `judge` | Judge model |
 |---|---|---|
-| `xstest`, `sgxstest`, `or-bench`, `xsafety`, `civics` | `qwen` and `llama` (the paper reports both) | Qwen3-30B-A3B-Instruct-2507, Llama-3.3-70B-Instruct |
+| `xstest`, `sgxstest`, `or-bench`, `xsafety`***, `civics` | `qwen` and `llama` (the paper reports both) | Qwen3-30B-A3B-Instruct-2507, Llama-3.3-70B-Instruct |
 | `harm_bench` | `classifier` | `cais/HarmBench-Llama-2-13b-cls` |
 | `sorry-bench` | `classifier` | `sorry-bench/ft-mistral-7b-instruct-v0.2-sorry-bench-202406` |
 | `wild-guard` | `classifier` | `allenai/wildguard` |
@@ -117,7 +117,7 @@ about 4×80GB). Verdicts are written into the log files in place (columns
 `QWEN`, `LLAMA`, `LLAMA2_CLS`, …). Already-judged items are skipped, so reruns
 only fill gaps; `--override_results` re-judges everything.
 
-The French, German, and Spanish XSafety splits are judged in English: translate
+***The French, German, and Spanish XSafety splits are judged in English: translate
 the prompts and the responses with
 [TranslateGemma](https://huggingface.co/google/translategemma-12b-it) first,
 then pass `--lang`:
