@@ -85,7 +85,7 @@ separate clients that are not included here.
 
 ## LLM judges
 
-The safety and refusal benchmarks are scored from a judge model's verdict on
+The safety and refusal benchmarks (listed below) are scored from a judge model's verdict on
 each response, so run the judges on the collected logs before scoring them.
 Each benchmark's judge, prompt, and output column are set in `judge/config.py`:
 
