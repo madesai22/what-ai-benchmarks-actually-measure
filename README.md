@@ -140,9 +140,15 @@ copied to `world_values_metadata.json` at the repo root.
 
 ## Requirements
 
+Python 3.9 or newer.
+
 ```bash
 pip install -r requirements.txt
 ```
+
+Collecting responses and running the judges also needs
+[vLLM](https://docs.vllm.ai) on a GPU machine (`pip install vllm`). Building
+datasets and scoring do not.
 
 ## Citation
 

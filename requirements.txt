@@ -2,7 +2,6 @@ datasets
 pandas
 numpy
 requests
-pyyaml
 scikit-learn
 scipy
 nltk
