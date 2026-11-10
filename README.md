@@ -100,7 +100,7 @@ cd judge
 ./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--override_results]
 ```
 
-### Examples: 
+### Examples of using score_judge.sh: 
 To score responses from gemma-2-9b-it on xstest, sgxstest, or-bench, xsafety, and civics using Qwen/Qwen3-30B-A3B-Instruct-2507, use:
 ```
 ./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
