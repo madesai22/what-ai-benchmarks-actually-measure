@@ -15,10 +15,10 @@ on the Hugging Face Hub:
 |---|---|
 | `data_acquisition/get_data.py` | Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
 | `run_experiments/make_run_script.py` | Writes the collection (or scoring) commands for every benchmark for one model, with the paper's per-benchmark settings. |
-| `run_experiments/run_experiments_vllm.py` | Sends one benchmark file to a model served by vLLM and writes its responses to `logs/<model>/<eval>.jsonl`. |
-| `score.py` | Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
 | `run_experiments/run_model.sh` | Starts a vLLM server for a model, collects its responses, and stops the server. |
 | `judge/` | Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `score_judge.sh`, `translate_gemma.py` for non-English XSafety). |
+| `score.py` | Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
+
 
 ## Building datasets
 
