@@ -18,7 +18,7 @@ on the Hugging Face Hub:
 | `run_experiments/run_experiments_vllm.py` | Sends one benchmark file to a model served by vLLM and writes its responses to `logs/<model>/<eval>.jsonl`. |
 | `run_experiments/make_run_script.py` | Writes the collection (or scoring) commands for every benchmark for one model, with the paper's per-benchmark settings. |
 | `run_experiments/run_vllm_example.sh` | Starts a vLLM server for a model and collects responses, end to end. |
-| `judge/` | Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `run_judge.sh`). |
+| `judge/` | Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `score_judge.sh`). |
 
 ## Building datasets
 
@@ -87,21 +87,35 @@ separate clients that are not included here.
 
 The safety and refusal benchmarks (listed below) are scored from a judge model's verdict on
 each response, so run the judges on the collected logs before scoring them.
-Each benchmark's judge, prompt, and output column are set in `judge/config.py`:
+Each benchmark's judge, prompt, and output column are set in `judge/config.py`.
 
-| Benchmarks | Judge | Command |
+`judge/score_judge.sh` starts the judge with vLLM, labels the responses, and
+stops the server:
+
+```bash
+cd judge
+./score_judge.sh <judge> <scored_model|all> <eval> [eval ...] [--override_results]
+
+./score_judge.sh qwen google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
+TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
+./score_judge.sh classifier all harm_bench
+```
+
+| Benchmarks (`eval`) | `judge` | Judge model |
 |---|---|---|
-| XSTest, SGXSTest, OR-Bench, XSafety, Civics | Qwen3-30B-A3B-Instruct-2507 and Llama-3.3-70B-Instruct | `bash judge/run_judge.sh qwen`, `TP=4 bash judge/run_judge.sh llama` |
-| HarmBench | `cais/HarmBench-Llama-2-13b-cls` | `bash judge/run_judge.sh harm_bench` |
-| SORRY-Bench | `sorry-bench/ft-mistral-7b-instruct-v0.2-sorry-bench-202406` | `bash judge/run_judge.sh sorry-bench` |
-| WildGuardTest | `allenai/wildguard` | `bash judge/run_judge.sh wild-guard` |
-| SG-Bench | `meta-llama/LlamaGuard-7b` | `bash judge/run_judge.sh sg_bench` |
+| `xstest`, `sgxstest`, `or-bench`, `xsafety`, `civics` | `qwen` and `llama` (the paper reports both) | Qwen3-30B-A3B-Instruct-2507, Llama-3.3-70B-Instruct |
+| `harm_bench` | `classifier` | `cais/HarmBench-Llama-2-13b-cls` |
+| `sorry-bench` | `classifier` | `sorry-bench/ft-mistral-7b-instruct-v0.2-sorry-bench-202406` |
+| `wild-guard` | `classifier` | `allenai/wildguard` |
+| `sg_bench` | `classifier` | `meta-llama/LlamaGuard-7b` |
 
-Verdicts are written into the log files in place (columns `QWEN`, `LLAMA`,
-`LLAMA2_CLS`, …). Already-judged items are skipped, so reruns only fill gaps.
-Add `--model <model>` to judge one model's logs only. The non-English XSafety
-splits are judged on an English translation of each response, stored in a
-`translation` field that must be added to the logs first.
+Set `TP` to the number of GPUs to shard the judge over (Llama-3.3-70B needs
+about 4×80GB). Verdicts are written into the log files in place (columns
+`QWEN`, `LLAMA`, `LLAMA2_CLS`, …). Already-judged items are skipped, so reruns
+only fill gaps; `--override_results` re-judges everything. The non-English
+XSafety splits are judged on an English translation of each response, stored
+in a `translation` field that must be added to the logs first
+(`python score_judge.py --eval xsafety --judge qwen --lang fr` once it is).
 
 ## Scoring
 

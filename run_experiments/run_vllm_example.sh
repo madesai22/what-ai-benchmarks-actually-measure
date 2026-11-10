@@ -7,7 +7,7 @@
 # Env vars: TP (tensor-parallel size, default 1), PORT (default 8000),
 #           MAX_CONCURRENT (default 8), VLLM_ARGS (extra args for `vllm serve`).
 #
-# Afterwards: run judge/run_judge.sh for the judged benchmarks, then score with
+# Afterwards: run judge/score_judge.sh for the judged benchmarks, then score with
 #   python run_experiments/make_run_script.py --model <model> --scoring && bash run_<model>_scoring.sh
 set -euo pipefail
 

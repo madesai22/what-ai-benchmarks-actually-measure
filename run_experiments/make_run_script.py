@@ -29,7 +29,7 @@ DEFAULT_DATA_DIR = REPO_ROOT / "data_acquisition" / "data"
 MAX_TOKENS = {"open_generation": 200, "closed_generation": 25, "mcq": 5}
 LONG_ANSWER_EVALS = {"gsm8k": 500, "math": 500}
 
-# Benchmarks whose scores come from an LLM judge: run judge/run_judge.sh on the
+# Benchmarks whose scores come from an LLM judge: run judge/score_judge.sh on the
 # collected logs before scoring them.
 JUDGED_EVALS = {"harm_bench", "sorry-bench", "salad-bench", "sg_bench", "sgxstest",
                 "wild-guard", "xsafety", "or-bench", "xstest", "civics"}
@@ -104,7 +104,7 @@ def main():
             print(f"warning: {bench_dir} not found (run get_data.py {name}?)")
             continue
         if args.scoring and name in JUDGED_EVALS:
-            lines.append(f"# {name}: run judge/run_judge.sh on these logs first")
+            lines.append(f"# {name}: run judge/score_judge.sh on these logs first")
         lines += commands_for(bench_dir, args.model, args.scoring, args.port, args.max_concurrent, args.log_dir)
 
     suffix = "_scoring" if args.scoring else ""

@@ -14,7 +14,7 @@ in place; score.py then reads that column. Items already judged are skipped
 unless --override_results is given, and items whose request failed are
 marked "Error" and retried on the next run.
 
-Start the judge's vLLM server first (judge/run_judge.sh does this for you):
+Start the judge's vLLM server first (judge/score_judge.sh does this for you):
 
     vllm serve cais/HarmBench-Llama-2-13b-cls --port 8001
 
@@ -184,6 +184,8 @@ def main():
         file_name = file_name.replace("engl", args.lang)
 
     judge_model, label = cfg["model"], cfg.get("label")
+    if judge_model != "multiple" and args.judge:
+        sys.exit(f"{args.eval} is judged by its own classifier ({judge_model}); drop --judge")
     if judge_model == "multiple":
         if not args.judge:
             sys.exit(f"{args.eval} has no dedicated classifier: pass --judge qwen or --judge llama")
