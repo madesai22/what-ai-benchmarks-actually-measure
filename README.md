@@ -98,11 +98,19 @@ stops the server:
 ```bash
 cd judge
 ./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--override_results]
-
-./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
-TP=4 ./score_judge.sh meta-llama/Llama-3.3-70B-Instruct all xstest sgxstest or-bench xsafety civics
-./score_judge.sh cais/HarmBench-Llama-2-13b-cls all harm_bench
 ```
+
+For example, to score responses from gemma-2-9b-it on xstest, sgxstest, or-bench, xsafety, and civics using Qwen/Qwen3-30B-A3B-Instruct-2507, use:
+```
+./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
+TP=4 
+```
+
+To score responses from all models on harm_bench using cais/HarmBench-Llama-2-13b-cls,  use:
+```
+./score_judge.sh meta-llama/Llama-3.3-70B-Instruct all harm_bench
+```
+
 
 Use this `judge_model` for each benchmark:
 
