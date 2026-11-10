@@ -13,11 +13,11 @@ on the Hugging Face Hub:
 
 | Path | What it does |
 |---|---|
-| `data_acquisition/get_data.py` | Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
-| `run_experiments/make_run_script.py` | Writes the collection (or scoring) commands for every benchmark for one model, with the paper's per-benchmark settings. |
+| `data_acquisition/get_data.py` | **Building datasets** Downloads each benchmark from its source (Hugging Face, HELM, GitHub releases, …), samples it (fixed seeds), and writes `data/<benchmark>/<benchmark>.jsonl` plus a `*_config.json` with the system prompt, eval type, and scoring functions. |
+| `run_experiments/make_run_script.py` | **Collecting model responses** Writes the collection (or scoring) commands for every benchmark for one model, with the paper's per-benchmark settings. |
 | `run_experiments/run_model.sh` | Starts a vLLM server for a model, collects its responses, and stops the server. |
-| `judge/` | Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `score_judge.sh`, `translate_gemma.py` for non-English XSafety). |
-| `score.py` | Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
+| `judge/` | **Judging safety and refusal benchmarks** Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `score_judge.sh`, `translate_gemma.py` for non-English XSafety). |
+| `score.py` | **Scoring** Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
 
 
 ## Building datasets
@@ -86,7 +86,7 @@ token; the server must allow it (`vllm serve ... --max-logprobs 150`, which
 `run_model.sh` sets). API models (OpenAI, Anthropic, …) were queried with
 separate clients that are not included here.
 
-## LLM judges
+## Judging safety and refusal benchmarks
 
 The safety and refusal benchmarks (listed below) are scored from a judge model's verdict on
 each response, so run the judges on the collected logs before scoring them.
