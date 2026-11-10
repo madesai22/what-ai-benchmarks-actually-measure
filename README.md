@@ -104,7 +104,7 @@ TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
 ./score_judge.sh classifier all harm_bench
 ```
 
-| Benchmarks (`eval`) | `judge` | Judge model |
+| Benchmarks (`eval`) | `judge_model` (argument for score_judge.sh) | Judge model |
 |---|---|---|
 | `xstest`, `sgxstest`, `or-bench`, `xsafety`\*, `civics` | `qwen` and `llama` (the paper reports both) | Qwen3-30B-A3B-Instruct-2507, Llama-3.3-70B-Instruct |
 | `harm_bench` | `classifier` | `cais/HarmBench-Llama-2-13b-cls` |
