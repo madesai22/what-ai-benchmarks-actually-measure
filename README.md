@@ -100,6 +100,16 @@ cd judge
 ./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--override_results]
 ```
 
+Use this `judge_model` for each benchmark:
+
+| `eval` | `judge_model` |
+|---|---|
+| `xstest`, `sgxstest`, `or-bench`, `xsafety`\*, `civics` | `Qwen/Qwen3-30B-A3B-Instruct-2507` **and** `meta-llama/Llama-3.3-70B-Instruct` (run both; the paper reports both) |
+| `harm_bench` | `cais/HarmBench-Llama-2-13b-cls` |
+| `sorry-bench` | `sorry-bench/ft-mistral-7b-instruct-v0.2-sorry-bench-202406` |
+| `wild-guard` | `allenai/wildguard` |
+| `sg_bench` | `meta-llama/LlamaGuard-7b` |
+
 ### Examples of using score_judge.sh: 
 To score responses from gemma-2-9b-it on xstest, sgxstest, or-bench, xsafety, and civics using Qwen/Qwen3-30B-A3B-Instruct-2507, use:
 ```
@@ -112,17 +122,6 @@ To score responses from all models on harm_bench using cais/HarmBench-Llama-2-13
 ./score_judge.sh meta-llama/Llama-3.3-70B-Instruct all harm_bench
 ```
 
-
-Use this `judge_model` for each benchmark:
-
-| `eval` | `judge_model` |
-|---|---|
-| `xstest`, `sgxstest`, `or-bench`, `xsafety`\*, `civics` | `Qwen/Qwen3-30B-A3B-Instruct-2507` **and** `meta-llama/Llama-3.3-70B-Instruct` (run both; the paper reports both) |
-| `harm_bench` | `cais/HarmBench-Llama-2-13b-cls` |
-| `sorry-bench` | `sorry-bench/ft-mistral-7b-instruct-v0.2-sorry-bench-202406` |
-| `wild-guard` | `allenai/wildguard` |
-| `sg_bench` | `meta-llama/LlamaGuard-7b` |
-
 Benchmarks can share one `score_judge.sh` call only if they use the same
 `judge_model`.
 
@@ -131,6 +130,7 @@ about 4×80GB). Verdicts are written into the log files in place (columns
 `QWEN`, `LLAMA`, `LLAMA2_CLS`, …). Already-judged items are skipped, so reruns
 only fill gaps; `--override_results` re-judges everything.
 
+### Translation
 \*The French, German, and Spanish XSafety splits are judged in English: translate
 the prompts and the responses with
 [TranslateGemma](https://huggingface.co/google/translategemma-12b-it) first,
