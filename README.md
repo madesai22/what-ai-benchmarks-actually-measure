@@ -131,7 +131,7 @@ only fill gaps; `--override_results` re-judges everything.
 
 ### Translation
 \*The French, German, and Spanish XSafety splits are judged in English: translate
-the prompts and the responses with
+the prompts and the responses before doing LLM judging with
 [TranslateGemma](https://huggingface.co/google/translategemma-12b-it) first,
 then pass `--lang`:
 
