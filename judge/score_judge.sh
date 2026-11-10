@@ -1,31 +1,13 @@
 #!/bin/bash
-# Serve a judge model with vLLM, label one model's (or every model's) responses, then stop the server.
-#
-#   ./score_judge.sh <judge> <scored_model|all> <eval> [eval ...] [--override_results]
-#
-#   judge         qwen        Qwen/Qwen3-30B-A3B-Instruct-2507  (xstest, sgxstest, or-bench, xsafety, civics)
-#                 llama       meta-llama/Llama-3.3-70B-Instruct (same benchmarks)
-#                 classifier  the benchmark's own classifier from config.py
-#                             (harm_bench, sorry-bench, wild-guard, sg_bench, salad-bench)
-#   scored_model  model whose logs to judge, as in logs/ (google_gemma-2-9b-it or google/gemma-2-9b-it),
-#                 or "all" for every model in logs/
-#   eval          one or more benchmarks (names as in config.py)
-#
+# Usage: ./score_judge.sh <judge> <scored_model|all> <eval> [eval ...] [--override_results] [--lang=fr]
+#   judge: qwen, llama, or classifier (the benchmark's own judge from config.py)
 # Examples:
 #   ./score_judge.sh qwen google/gemma-2-9b-it xstest or-bench xsafety
 #   TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
 #   ./score_judge.sh classifier all harm_bench
-#   ./score_judge.sh llama google/gemma-2-9b-it or-bench --override_results   # re-judge everything
-#   ./score_judge.sh qwen all xsafety --lang=fr        # after translate_gemma.py (see README)
-#
-# Env vars: TP (tensor-parallel size, default 1; Llama-3.3-70B needs ~4x80GB GPUs),
-#           PORT (default 8001), VLLM_ARGS (extra args for `vllm serve`).
-set -euo pipefail
 
-if [ $# -lt 3 ]; then
-    sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
-    exit 1
-fi
+# source ~/miniconda3/etc/profile.d/conda.sh
+# conda activate <your-env>
 
 JUDGE=$1
 SCORED_MODEL=$2
@@ -38,74 +20,80 @@ for arg in "$@"; do
         *)   EVALS+=("$arg") ;;
     esac
 done
-TP=${TP:-1}
-PORT=${PORT:-8001}
+TP=${TP:-1}   # number of GPUs; Llama-3.3-70B needs TP=4
 
-cd "$(dirname "$0")"              # judge/
+cd "$(dirname "$0")"
 
-# --- which model serves as the judge ----------------------------------------
-case "$JUDGE" in
-    qwen)  MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507 ;;
-    llama) MODEL=meta-llama/Llama-3.3-70B-Instruct ;;
-    classifier)
-        # every eval must use the same classifier, since one server is started
-        MODEL=$(python -c '
-import sys
-from config import eval_to_judge
-models = {eval_to_judge[e]["model"] for e in sys.argv[1:]}
-if "multiple" in models:
-    sys.exit("these evals have no classifier of their own; use qwen or llama")
-if len(models) > 1:
-    sys.exit("these evals use different classifiers; run them separately: " + ", ".join(sorted(models)))
-print(models.pop())' "${EVALS[@]}") ;;
-    *) echo "judge must be qwen, llama, or classifier (got: $JUDGE)"; exit 1 ;;
-esac
-MODEL_NAME=$(echo "$MODEL" | tr '/' '_')
-
-MODEL_ARGS=()
-if [ "$SCORED_MODEL" != all ]; then
-    MODEL_ARGS=(--model "$SCORED_MODEL")
+if [ "$JUDGE" = "qwen" ]; then
+    MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507
+    JUDGE_ARG="--judge qwen"
+elif [ "$JUDGE" = "llama" ]; then
+    MODEL=meta-llama/Llama-3.3-70B-Instruct
+    JUDGE_ARG="--judge llama"
+else
+    # the benchmark's own classifier, e.g. cais/HarmBench-Llama-2-13b-cls for harm_bench
+    MODEL=$(python -c "from config import eval_to_judge; print(eval_to_judge['${EVALS[0]}']['model'])")
+    JUDGE_ARG=""
 fi
-JUDGE_ARGS=()
-if [ "$JUDGE" != classifier ]; then
-    JUDGE_ARGS=(--judge "$JUDGE")
+MODEL_NAME=$(echo $MODEL | tr '/' '_')
+
+if [ "$SCORED_MODEL" = "all" ]; then
+    MODEL_ARG=""
+else
+    MODEL_ARG="--model $SCORED_MODEL"
 fi
 
-# --- start server --------------------------------------------------------------
-mkdir -p ../logs
-SERVER_LOG=../logs/vllm_judge_${MODEL_NAME}.log
-echo "Starting judge $MODEL on port $PORT (server log: $SERVER_LOG)"
+
+echo "Current active environment: $CONDA_DEFAULT_ENV"
+echo "Python path: $(which python)"
+echo "Python version: $(python --version)"
+echo "Judge: $MODEL"
+
+rm -f nohup.out
+# start server
 nohup vllm serve "$MODEL" \
-  --tensor-parallel-size "$TP" \
+  --tensor-parallel-size $TP \
   --host 0.0.0.0 \
-  --port "$PORT" \
+  --port 8001 \
   --dtype auto \
   --gpu-memory-utilization 0.85 \
   --swap-space 8 \
   --disable-log-stats \
-  ${VLLM_ARGS:-} \
- > "$SERVER_LOG" 2>&1 &
-SERVER_PID=$!
-trap 'echo "Stopping vLLM server ($SERVER_PID)"; kill $SERVER_PID 2>/dev/null || true' EXIT
+ > nohup.out 2>&1 &
 
-# --- wait for it to be ready ------------------------------------------------------
-timeout=1500  # 25 minutes, for first-time model downloads
+# Save the PID
+echo $! > $MODEL_NAME.pid
+echo "Started vLLM server with PID: $(cat $MODEL_NAME.pid)"
+
+# Wait for server to be ready
+echo "Waiting for vLLM server to start..."
+timeout=1500  # 25 minutes timeout
 elapsed=0
-until curl -sf "http://localhost:$PORT/health" > /dev/null; do
-    if ! kill -0 $SERVER_PID 2>/dev/null; then
-        echo "vLLM server exited. Last lines of its log:"; tail -n 50 "$SERVER_LOG"; exit 1
-    fi
-    if [ $elapsed -ge $timeout ]; then
-        echo "Timeout waiting for server to start. Last lines of its log:"; tail -n 50 "$SERVER_LOG"; exit 1
-    fi
-    echo "Server not ready yet, waiting... (${elapsed}s elapsed)"
-    sleep 5
-    elapsed=$((elapsed + 5))
-done
-echo "vLLM server is ready!"
 
-# --- judge ------------------------------------------------------------------------
-for EVAL in "${EVALS[@]}"; do
-    python score_judge.py --eval "$EVAL" --port "$PORT" \
-        ${JUDGE_ARGS[@]+"${JUDGE_ARGS[@]}"} ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
+while true; do
+    if grep -q "Application startup complete." nohup.out 2>/dev/null; then
+        echo "vLLM server is ready!"
+        break
+    else
+        if [ $elapsed -ge $timeout ]; then
+            echo "Timeout waiting for server to start"
+            echo "Last few lines of log:"
+            tail -n 50 nohup.out 2>/dev/null
+            kill "$(cat $MODEL_NAME.pid)"
+            rm $MODEL_NAME.pid
+            exit 1
+        fi
+
+        echo "Server not ready yet, waiting... (${elapsed}s elapsed)"
+        echo "Last log line: $(tail -n 1 nohup.out 2>/dev/null)"
+        sleep 5
+        elapsed=$((elapsed + 5))
+    fi
 done
+
+for EVAL in "${EVALS[@]}"; do
+    python score_judge.py --eval $EVAL $JUDGE_ARG $MODEL_ARG "${EXTRA_ARGS[@]}"
+done
+
+kill "$(cat $MODEL_NAME.pid)"
+rm $MODEL_NAME.pid

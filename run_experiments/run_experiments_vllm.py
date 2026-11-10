@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Collect model responses for one benchmark file from a running vLLM server.
 
-Start a server first (see run_vllm_example.sh), e.g.
+Start a server first (run_model.sh does this for you), e.g.
 
     vllm serve google/gemma-2-9b-it --port 8000 --max-logprobs 150
 

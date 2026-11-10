@@ -17,7 +17,7 @@ on the Hugging Face Hub:
 | `run_experiments/make_run_script.py` | Writes the collection (or scoring) commands for every benchmark for one model, with the paper's per-benchmark settings. |
 | `run_experiments/run_experiments_vllm.py` | Sends one benchmark file to a model served by vLLM and writes its responses to `logs/<model>/<eval>.jsonl`. |
 | `score.py` | Turns raw model response logs (`logs/<model>/<eval>.jsonl`) into benchmark scores — exact match, F1, ROUGE, demographic parity, refusal accuracies from LLM-judge verdicts, etc. |
-| `run_experiments/run_vllm_example.sh` | Starts a vLLM server for a model and collects responses, end to end. |
+| `run_experiments/run_model.sh` | Starts a vLLM server for a model, collects its responses, and stops the server. |
 | `judge/` | Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `score_judge.sh`, `translate_gemma.py` for non-English XSafety). |
 
 ## Building datasets
@@ -57,12 +57,15 @@ Responses are collected from models served with [vLLM](https://docs.vllm.ai)
 first, then, on a GPU machine:
 
 ```bash
-# a few example benchmarks
-bash run_experiments/run_vllm_example.sh google/gemma-2-9b-it
+cd run_experiments
+./run_model.sh <model> <eval> [eval ...]     # or: ./run_model.sh <model> all
 
-# every benchmark (TP = number of GPUs to shard the model over)
-TP=4 bash run_experiments/run_vllm_example.sh google/gemma-2-9b-it --all
+./run_model.sh google/gemma-2-9b-it xstest mmlu gsm8k
+TP=4 ./run_model.sh meta-llama/Llama-3.3-70B-Instruct all   # TP = number of GPUs
 ```
+
+`run_model.sh` writes the collection commands to `run_<model>.sh` (with
+`make_run_script.py`) and runs them, so you can also edit and rerun that file.
 
 Responses land in `logs/<model>/`. Sampling uses temperature 1, and each
 benchmark's system prompt and token limit come from its `*_config.json`. Failed
@@ -80,7 +83,7 @@ Each response is stored with its token log-probabilities. Benchmarks scored from
 answer-option probabilities (DiscrimEval) get `--log_probs 150` from their
 config, which records each option's log-probability as the first generated
 token; the server must allow it (`vllm serve ... --max-logprobs 150`, which
-`run_vllm_example.sh` sets). API models (OpenAI, Anthropic, …) were queried with
+`run_model.sh` sets). API models (OpenAI, Anthropic, …) were queried with
 separate clients that are not included here.
 
 ## LLM judges

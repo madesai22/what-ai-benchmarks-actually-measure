@@ -4,3 +4,7 @@ data/
 .DS_Store
 logs/
 /run_*.sh
+run_experiments/run_*.sh
+!run_experiments/run_model.sh
+*.pid
+nohup.out
