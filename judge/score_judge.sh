@@ -1,15 +1,15 @@
 #!/bin/bash
-# Usage: ./score_judge.sh <judge> <scored_model|all> <eval> [eval ...] [--override_results] [--lang=fr]
-#   judge: qwen, llama, or classifier (the benchmark's own judge from config.py)
+# Usage: ./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--override_results] [--lang=fr]
+#   judge_model: the Hugging Face name of the judge (see the table in the README)
 # Examples:
-#   ./score_judge.sh qwen google/gemma-2-9b-it xstest or-bench xsafety
-#   TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
-#   ./score_judge.sh classifier all harm_bench
+#   ./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest or-bench xsafety
+#   TP=4 ./score_judge.sh meta-llama/Llama-3.3-70B-Instruct all xstest sgxstest or-bench xsafety civics
+#   ./score_judge.sh cais/HarmBench-Llama-2-13b-cls all harm_bench
 
 # source ~/miniconda3/etc/profile.d/conda.sh
 # conda activate <your-env>
 
-JUDGE=$1
+MODEL=$1
 SCORED_MODEL=$2
 shift 2
 EVALS=()
@@ -24,17 +24,6 @@ TP=${TP:-1}   # number of GPUs; Llama-3.3-70B needs TP=4
 
 cd "$(dirname "$0")"
 
-if [ "$JUDGE" = "qwen" ]; then
-    MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507
-    JUDGE_ARG="--judge qwen"
-elif [ "$JUDGE" = "llama" ]; then
-    MODEL=meta-llama/Llama-3.3-70B-Instruct
-    JUDGE_ARG="--judge llama"
-else
-    # the benchmark's own classifier, e.g. cais/HarmBench-Llama-2-13b-cls for harm_bench
-    MODEL=$(python -c "from config import eval_to_judge; print(eval_to_judge['${EVALS[0]}']['model'])")
-    JUDGE_ARG=""
-fi
 MODEL_NAME=$(echo $MODEL | tr '/' '_')
 
 if [ "$SCORED_MODEL" = "all" ]; then
@@ -92,7 +81,7 @@ while true; do
 done
 
 for EVAL in "${EVALS[@]}"; do
-    python score_judge.py --eval $EVAL $JUDGE_ARG $MODEL_ARG "${EXTRA_ARGS[@]}"
+    python score_judge.py --judge_model $MODEL --eval $EVAL $MODEL_ARG "${EXTRA_ARGS[@]}"
 done
 
 kill "$(cat $MODEL_NAME.pid)"

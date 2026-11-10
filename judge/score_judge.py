@@ -4,10 +4,13 @@
 Each benchmark's judge, prompt, and output column are set in config.py
 (eval_to_judge). Most benchmarks use their own published classifier
 (e.g. HarmBench -> cais/HarmBench-Llama-2-13b-cls). XSTest, SGXSTest, OR-Bench,
-XSafety, and Civics use a general model chosen with --judge:
+XSafety, and Civics can be judged by either of two general models (the paper
+reports both):
 
-    qwen  -> Qwen/Qwen3-30B-A3B-Instruct-2507   (column QWEN)
-    llama -> meta-llama/Llama-3.3-70B-Instruct  (column LLAMA)
+    Qwen/Qwen3-30B-A3B-Instruct-2507   (writes column QWEN)
+    meta-llama/Llama-3.3-70B-Instruct  (writes column LLAMA)
+
+--judge_model must name the model the vLLM server is serving.
 
 The judge's output is added to each line of logs/<model>/<benchmark file>
 in place; score.py then reads that column. Items already judged are skipped
@@ -19,9 +22,9 @@ Start the judge's vLLM server first (judge/score_judge.sh does this for you):
     vllm serve cais/HarmBench-Llama-2-13b-cls --port 8001
 
 Examples:
-    python judge/score_judge.py --eval harm_bench
-    python judge/score_judge.py --eval xstest --judge qwen --model google/gemma-2-9b-it
-    python judge/score_judge.py --eval xsafety --judge llama --lang fr
+    python score_judge.py --judge_model cais/HarmBench-Llama-2-13b-cls --eval harm_bench
+    python score_judge.py --judge_model Qwen/Qwen3-30B-A3B-Instruct-2507 --eval xstest --model google/gemma-2-9b-it
+    python score_judge.py --judge_model meta-llama/Llama-3.3-70B-Instruct --eval xsafety --lang fr
 """
 import argparse
 import json
@@ -40,8 +43,9 @@ DEFAULT_DATA_DIR = REPO_ROOT / "data_acquisition" / "data"
 DEFAULT_LOG_DIR = REPO_ROOT / "logs"
 HARMBENCH_CONTEXT = JUDGE_DIR / "harmbench_context.jsonl"
 
-GENERAL_JUDGES = {"qwen": "Qwen/Qwen3-30B-A3B-Instruct-2507",
-                  "llama": "meta-llama/Llama-3.3-70B-Instruct"}
+# general judges for benchmarks without their own classifier -> column they write
+GENERAL_JUDGES = {"Qwen/Qwen3-30B-A3B-Instruct-2507": "QWEN",
+                  "meta-llama/Llama-3.3-70B-Instruct": "LLAMA"}
 # Judges queried through the chat endpoint; all others get the raw prompt
 # through the completions endpoint.
 CHAT_JUDGES = {"Qwen/Qwen3-30B-A3B-Instruct-2507", "meta-llama/Llama-3.3-70B-Instruct",
@@ -65,8 +69,7 @@ def truncate_answer(answer, max_answer_tokens=512):
 def parse_arguments():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--eval', required=True, choices=sorted(eval_to_judge), help='Benchmark to judge')
-    p.add_argument('--judge', choices=sorted(GENERAL_JUDGES), default=None,
-                   help='General judge for benchmarks without their own classifier')
+    p.add_argument('--judge_model', required=True, help='Judge model being served by vLLM (Hugging Face name)')
     p.add_argument('--model', default=None, help='Only judge this model (default: every model in --log_dir)')
     p.add_argument('--lang', default=None,
                    help="XSafety language (de, fr, sp). Judges the English 'translation' field of each "
@@ -183,13 +186,13 @@ def main():
             sys.exit("--lang only applies to xsafety")
         file_name = file_name.replace("engl", args.lang)
 
-    judge_model, label = cfg["model"], cfg.get("label")
-    if judge_model != "multiple" and args.judge:
-        sys.exit(f"{args.eval} is judged by its own classifier ({judge_model}); drop --judge")
-    if judge_model == "multiple":
-        if not args.judge:
-            sys.exit(f"{args.eval} has no dedicated classifier: pass --judge qwen or --judge llama")
-        judge_model, label = GENERAL_JUDGES[args.judge], args.judge.upper()
+    judge_model, label = args.judge_model, cfg.get("label")
+    if cfg["model"] == "multiple":
+        if judge_model not in GENERAL_JUDGES:
+            sys.exit(f"{args.eval} is judged by one of: {', '.join(GENERAL_JUDGES)} (got {judge_model})")
+        label = GENERAL_JUDGES[judge_model]
+    elif judge_model != cfg["model"]:
+        sys.exit(f"{args.eval} is judged by {cfg['model']} (got {judge_model})")
     print(f"Judging {args.eval} ({file_name}) with {judge_model} -> column {label}")
 
     prompts = load_prompts(args.eval, Path(args.data_dir) / args.eval / file_name, args.lang)

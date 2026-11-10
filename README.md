@@ -99,18 +99,23 @@ stops the server:
 cd judge
 ./score_judge.sh <judge_model> <scored_model|all> <eval> [eval ...] [--override_results]
 
-./score_judge.sh qwen google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
-TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
-./score_judge.sh classifier all harm_bench
+./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 google/gemma-2-9b-it xstest sgxstest or-bench xsafety civics
+TP=4 ./score_judge.sh meta-llama/Llama-3.3-70B-Instruct all xstest sgxstest or-bench xsafety civics
+./score_judge.sh cais/HarmBench-Llama-2-13b-cls all harm_bench
 ```
 
-| Benchmarks (`eval`) | `judge_model` (argument for score_judge.sh) | Judge model |
-|---|---|---|
-| `xstest`, `sgxstest`, `or-bench`, `xsafety`\*, `civics` | `qwen` and `llama` (the paper reports both) | Qwen3-30B-A3B-Instruct-2507, Llama-3.3-70B-Instruct |
-| `harm_bench` | `classifier` | `cais/HarmBench-Llama-2-13b-cls` |
-| `sorry-bench` | `classifier` | `sorry-bench/ft-mistral-7b-instruct-v0.2-sorry-bench-202406` |
-| `wild-guard` | `classifier` | `allenai/wildguard` |
-| `sg_bench` | `classifier` | `meta-llama/LlamaGuard-7b` |
+Use this `judge_model` for each benchmark:
+
+| `eval` | `judge_model` |
+|---|---|
+| `xstest`, `sgxstest`, `or-bench`, `xsafety`\*, `civics` | `Qwen/Qwen3-30B-A3B-Instruct-2507` **and** `meta-llama/Llama-3.3-70B-Instruct` (run both; the paper reports both) |
+| `harm_bench` | `cais/HarmBench-Llama-2-13b-cls` |
+| `sorry-bench` | `sorry-bench/ft-mistral-7b-instruct-v0.2-sorry-bench-202406` |
+| `wild-guard` | `allenai/wildguard` |
+| `sg_bench` | `meta-llama/LlamaGuard-7b` |
+
+Benchmarks can share one `score_judge.sh` call only if they use the same
+`judge_model`.
 
 Set `TP` to the number of GPUs to shard the judge over (Llama-3.3-70B needs
 about 4×80GB). Verdicts are written into the log files in place (columns
@@ -126,9 +131,9 @@ then pass `--lang`:
 cd judge
 python translate_gemma.py --mode data   # once: translate the prompts
 python translate_gemma.py --mode logs   # translate responses (add --model <model> for one)
-./score_judge.sh qwen all xsafety --lang=fr
-./score_judge.sh qwen all xsafety --lang=de
-./score_judge.sh qwen all xsafety --lang=sp
+./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=fr
+./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=de
+./score_judge.sh Qwen/Qwen3-30B-A3B-Instruct-2507 all xsafety --lang=sp
 ```
 
 ## Scoring
