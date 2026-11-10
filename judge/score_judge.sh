@@ -16,13 +16,14 @@
 #   TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
 #   ./score_judge.sh classifier all harm_bench
 #   ./score_judge.sh llama google/gemma-2-9b-it or-bench --override_results   # re-judge everything
+#   ./score_judge.sh qwen all xsafety --lang=fr        # after translate_gemma.py (see README)
 #
 # Env vars: TP (tensor-parallel size, default 1; Llama-3.3-70B needs ~4x80GB GPUs),
 #           PORT (default 8001), VLLM_ARGS (extra args for `vllm serve`).
 set -euo pipefail
 
 if [ $# -lt 3 ]; then
-    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
     exit 1
 fi
 

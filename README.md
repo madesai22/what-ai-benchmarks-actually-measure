@@ -18,7 +18,7 @@ on the Hugging Face Hub:
 | `run_experiments/run_experiments_vllm.py` | Sends one benchmark file to a model served by vLLM and writes its responses to `logs/<model>/<eval>.jsonl`. |
 | `run_experiments/make_run_script.py` | Writes the collection (or scoring) commands for every benchmark for one model, with the paper's per-benchmark settings. |
 | `run_experiments/run_vllm_example.sh` | Starts a vLLM server for a model and collects responses, end to end. |
-| `judge/` | Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `score_judge.sh`). |
+| `judge/` | Runs the LLM judges whose verdicts the safety and refusal benchmarks are scored from (`score_judge.py`, prompts in `config.py`, launcher `score_judge.sh`, `translate_gemma.py` for non-English XSafety). |
 
 ## Building datasets
 
@@ -112,10 +112,21 @@ TP=4 ./score_judge.sh llama all xstest sgxstest or-bench xsafety civics
 Set `TP` to the number of GPUs to shard the judge over (Llama-3.3-70B needs
 about 4×80GB). Verdicts are written into the log files in place (columns
 `QWEN`, `LLAMA`, `LLAMA2_CLS`, …). Already-judged items are skipped, so reruns
-only fill gaps; `--override_results` re-judges everything. The non-English
-XSafety splits are judged on an English translation of each response, stored
-in a `translation` field that must be added to the logs first
-(`python score_judge.py --eval xsafety --judge qwen --lang fr` once it is).
+only fill gaps; `--override_results` re-judges everything.
+
+The French, German, and Spanish XSafety splits are judged in English: translate
+the prompts and the responses with
+[TranslateGemma](https://huggingface.co/google/translategemma-12b-it) first,
+then pass `--lang`:
+
+```bash
+cd judge
+python translate_gemma.py --mode data   # once: translate the prompts
+python translate_gemma.py --mode logs   # translate responses (add --model <model> for one)
+./score_judge.sh qwen all xsafety --lang=fr
+./score_judge.sh qwen all xsafety --lang=de
+./score_judge.sh qwen all xsafety --lang=sp
+```
 
 ## Scoring
 
